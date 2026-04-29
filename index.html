@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap");
+    </style>
+    <title>
+      Visualisasi 3D Siklus Rotasi Bumi dan Pergantian Siang - Malam Berbasis
+      WebGL
+    </title>
+
+    <!--
+  ┌─────────────────────────────────────────────────────────┐
+  │  ENTRY POINT                                            │
+  │  Menghubungkan 4 modul:                                 │
+  │    mesh.js        → Orang 1  Mesh Architect             │
+  │    shaders.js     → Orang 2  Shader Specialist          │
+  │    camera.js      → Orang 3  Physics & Camera           │
+  │    integrator.js  → Orang 4  System Integrator          │
+  └─────────────────────────────────────────────────────────┘
+  -->
+
+    <style>
+      /* ── Reset & base ────────────────────────────────────── */
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --col-bg: #020611;
+        --col-bg-deep: #00030a;
+        --col-accent: #63a7ff;
+        --col-sun: #ffd27d;
+        --col-night: #91c6ff;
+        --col-dim: #0f2442;
+        --col-text: #9dc0e6;
+        --col-bright: #d7ebff;
+        --font-main: "Poppins", sans-serif;
+        --panel-bg: rgba(3, 10, 24, 0.68);
+        --panel-line: rgba(99, 167, 255, 0.18);
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(
+            circle at 20% 20%,
+            rgba(41, 93, 176, 0.14),
+            transparent 30%
+          ),
+          radial-gradient(
+            circle at 82% 18%,
+            rgba(255, 208, 128, 0.1),
+            transparent 22%
+          ),
+          radial-gradient(
+            circle at 50% 100%,
+            rgba(10, 26, 58, 0.86),
+            transparent 48%
+          ),
+          linear-gradient(180deg, var(--col-bg) 0%, var(--col-bg-deep) 100%);
+        overflow: hidden;
+        color: var(--col-text);
+        font-family: var(--font-main);
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image: radial-gradient(
+            rgba(183, 223, 255, 0.7) 0.7px,
+            transparent 0.8px
+          ),
+          radial-gradient(rgba(183, 223, 255, 0.35) 0.8px, transparent 1px);
+        background-size: 120px 120px, 220px 220px;
+        background-position: 0 0, 60px 90px;
+        opacity: 0.18;
+        mask-image: linear-gradient(
+          180deg,
+          rgba(0, 0, 0, 0.95),
+          transparent 88%
+        );
+      }
+
+      /* ── Canvas (full viewport) ──────────────────────────── */
+      #c {
+        position: fixed;
+        inset: 0;
+        display: block;
+      }
+
+      #overlay {
+        position: fixed;
+        inset: 0;
+        display: block;
+        pointer-events: none;
+        z-index: 6;
+      }
+
+      /* ── Hero panel kiri atas (tidier + responsive) ───────── */
+      #hero {
+        position: fixed;
+        top: 20px;
+        left: 22px;
+        z-index: 10;
+        width: min(320px, calc(100vw - 44px));
+        padding: 12px 12px;
+        border: 1px solid rgba(99, 167, 255, 0.12);
+        background: linear-gradient(
+          180deg,
+          rgba(8, 12, 22, 0.72),
+          rgba(3, 10, 24, 0.56)
+        );
+        backdrop-filter: blur(10px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        border-radius: 14px;
+      }
+
+      #hero .eyebrow {
+        font-size: 9px;
+        letter-spacing: 0.38em;
+        text-transform: uppercase;
+        color: var(--col-sun);
+        opacity: 0.9;
+        margin-bottom: 8px;
+      }
+
+      /* hide eyebrow for brevity, keep available for later */
+      #hero .eyebrow {
+        display: none;
+      }
+
+      #hero h1 {
+        font-size: clamp(16px, 1.9vw, 24px);
+        line-height: 1.04;
+        letter-spacing: 0.02em;
+        color: #eef6ff;
+        font-weight: 700;
+        max-width: 12ch;
+        text-wrap: balance;
+      }
+
+      #hero p {
+        display: none;
+      }
+
+      #controls {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+        align-items: center;
+        justify-content: flex-start;
+      }
+
+      .control-btn {
+        appearance: none;
+        border: 1px solid rgba(127, 167, 210, 0.14);
+        background: linear-gradient(
+          180deg,
+          rgba(12, 20, 36, 0.9),
+          rgba(8, 14, 28, 0.82)
+        );
+        color: #e6f3ff;
+        padding: 8px 10px;
+        border-radius: 999px;
+        font: inherit;
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: transform 0.14s ease, border-color 0.14s ease,
+          background 0.14s ease;
+      }
+
+      .control-btn:hover {
+        transform: translateY(-2px);
+        border-color: rgba(255, 210, 125, 0.36);
+      }
+
+      .control-btn.is-active {
+        border-color: rgba(255, 210, 125, 0.55);
+        background: linear-gradient(
+          180deg,
+          rgba(30, 44, 66, 0.98),
+          rgba(12, 20, 36, 0.95)
+        );
+        color: #fff0c4;
+      }
+
+      /* Responsive: adapt hero width and controls */
+      @media (max-width: 720px) {
+        #hero {
+          left: 12px;
+          top: 12px;
+          width: calc(100vw - 24px);
+          padding: 10px;
+        }
+        #controls {
+          justify-content: space-between;
+        }
+        .control-btn {
+          flex: 1 1 auto;
+          text-align: center;
+        }
+      }
+
+      /* ── HUD panel kiri atas ─────────────────────────────── */
+      /* HUD (kanan atas) — dibuat lebih kecil dan lebih transparan */
+      #hud {
+        position: fixed;
+        top: 20px;
+        right: 22px;
+        left: auto;
+        z-index: 10;
+        pointer-events: none;
+        user-select: none;
+        width: min(190px, calc(100vw - 44px));
+        padding: 10px 12px 10px;
+        border-radius: 14px;
+        border: 1px solid rgba(99, 167, 255, 0.12);
+        background: rgba(3, 10, 24, 0.28);
+        backdrop-filter: blur(6px);
+        font-size: 11px;
+      }
+
+      #hud .label {
+        font-size: 8px;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: var(--col-accent);
+        opacity: 0.85;
+        margin-bottom: 8px;
+      }
+
+      #hud .row {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        font-size: 8px;
+        letter-spacing: 0.14em;
+        line-height: 1.8;
+        color: #6f8faa;
+      }
+
+      #hud .row .key {
+        color: #385374;
+        min-width: 56px;
+      }
+      #hud .row .val {
+        color: var(--col-bright);
+      }
+
+      /* ── Compact note ────────────────────────────────────── */
+      #note {
+        position: fixed;
+        right: 22px;
+        bottom: 20px;
+        z-index: 10;
+        pointer-events: none;
+        padding: 10px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(99, 167, 255, 0.16);
+        background: rgba(3, 10, 24, 0.45);
+        color: #90afd0;
+        font-size: 9px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        max-width: min(320px, calc(100vw - 44px));
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* ── Hint bawah ──────────────────────────────────────── */
+      #hint {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 9px;
+        letter-spacing: 0.28em;
+        color: #7fa0c2;
+        text-transform: uppercase;
+        white-space: nowrap;
+        animation: fadeIn 2s 1.5s both;
+        text-shadow: 0 0 18px rgba(68, 112, 170, 0.35);
+      }
+
+      /* ── Crosshair center ────────────────────────────────── */
+      #crosshair {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #crosshair::before,
+      #crosshair::after {
+        content: "";
+        position: absolute;
+        background: rgba(30, 80, 160, 0.08);
+      }
+      #crosshair::before {
+        width: 1px;
+        height: 24px;
+      }
+      #crosshair::after {
+        width: 24px;
+        height: 1px;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <canvas id="c"></canvas>
+    <canvas id="overlay"></canvas>
+
+    <section id="hero" aria-label="Judul visualisasi">
+      <div class="eyebrow">WebGL Earth System</div>
+      <h1>
+        Visualisasi 3D Siklus Rotasi Bumi dan Pergantian Siang - Malam Berbasis
+        WebGL
+      </h1>
+      <p>
+        Rotasi harian Bumi, sumbu miring 23,5°, dan garis terminator divisualkan
+        secara ringkas.
+      </p>
+      <div id="controls" aria-label="Kontrol garis dan rotasi">
+        <button class="control-btn is-active" id="toggleSun" type="button">
+          Arah Matahari
+        </button>
+        <button class="control-btn is-active" id="toggleAxis" type="button">
+          Sumbu Rotasi
+        </button>
+        <button class="control-btn is-active" id="toggleCloud" type="button">
+          Awan
+        </button>
+      </div>
+    </section>
+
+    <div id="hud">
+      <div class="label">Status Bumi</div>
+      <div class="row">
+        <span class="key">FPS</span><span class="val" id="fps">--</span>
+      </div>
+      <div class="row">
+        <span class="key">ROT</span><span class="val" id="rot">0.0°</span>
+      </div>
+      <div class="row">
+        <span class="key">TILT</span><span class="val">23.5°</span>
+      </div>
+    </div>
+
+    <div id="crosshair"></div>
+    <div id="hint">drag bebas 360° · scroll to zoom</div>
+
+    <!--
+    Entry point — ES Module
+    Import Modul 4 (System Integrator), yang secara berantai
+    mengimpor Modul 1, 2, dan 3.
+  -->
+    <script type="module">
+      import { initApp } from "./integrator.js";
+
+      initApp({
+        canvasId: "c",
+        uiFps: document.getElementById("fps"),
+        uiRot: document.getElementById("rot"),
+      });
+    </script>
+  </body>
+</html>
