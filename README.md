@@ -60,6 +60,7 @@ earth-webgl/
 ### 1) mesh.js
 
 Tanggung jawab:
+
 - Membuat geometri UV sphere (`positions`, `normals`, `uvs`, `indices`).
 - Menghasilkan tekstur Bumi prosedural (`generateEarthTexture`).
 - Menghasilkan tekstur awan prosedural (`generateCloudTexture`).
@@ -69,6 +70,7 @@ Output modul ini diteruskan ke integrator untuk upload ke GPU.
 ### 2) shaders.js
 
 Tanggung jawab:
+
 - Menyediakan source vertex shader dan fragment shader.
 - Vertex shader menangani transformasi model-view-projection dan normal.
 - Fragment shader menangani:
@@ -82,6 +84,7 @@ Tanggung jawab:
 ### 3) camera.js
 
 Tanggung jawab:
+
 - Menyediakan kelas `EarthCamera`.
 - Menghitung matriks model, view, projection, dan normal matrix.
 - Menangani orbit camera (mouse atau touch), inertia, dan zoom.
@@ -90,6 +93,7 @@ Tanggung jawab:
 ### 4) integrator.js
 
 Tanggung jawab:
+
 - Inisialisasi WebGL2 context.
 - Compile dan link shader program.
 - Upload mesh ke GPU (VAO, VBO, IBO).
@@ -176,15 +180,18 @@ Beberapa parameter yang umum diubah:
 ## Kompatibilitas
 
 Minimum kebutuhan browser:
+
 - Browser modern dengan dukungan WebGL 2.0
 
 Umumnya kompatibel di:
+
 - Chrome
 - Edge
 - Firefox
 - Safari versi terbaru
 
 Jika context WebGL2 gagal dibuat, cek:
+
 - Driver GPU
 - Hardware acceleration browser
 - Dukungan WebGL di perangkat
