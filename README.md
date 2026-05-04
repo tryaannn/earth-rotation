@@ -1,239 +1,395 @@
-# Earth WebGL
+# 🌍 Earth WebGL — Realistic 3D Visualization
 
-Visualisasi 3D rotasi Bumi dan siklus siang-malam berbasis WebGL yang berjalan langsung di browser tanpa framework. Proyek ini menampilkan Bumi dengan kemiringan sumbu 23,5 derajat, transisi terminator siang-malam, atmosfer, awan prosedural, serta overlay arah Matahari dan sumbu rotasi.
+Visualisasi 3D Bumi yang sangat realistis dengan rotasi aksial dan siklus siang-malam, berjalan langsung di browser menggunakan WebGL tanpa framework eksternal. Proyek ini menampilkan Bumi dengan kemiringan sumbu 23,5°, transisi terminator siang-malam yang halus, atmosfer dinamis, awan prosedural, dan city lights di sisi malam yang terang dan jelas.
 
-## Tujuan Proyek
+## 🎯 Tujuan Proyek
 
-- Menyimulasikan konsep rotasi Bumi secara visual dan interaktif.
-- Menunjukkan hubungan sudut datang cahaya Matahari dengan area siang-malam.
-- Menjadi contoh implementasi WebGL modular untuk pembelajaran grafika komputer.
+- Menyimulasikan rotasi Bumi dan siklus siang-malam secara visual dan interaktif dengan akurasi geografis tinggi.
+- Menunjukkan hubungan antara sudut datang cahaya Matahari dengan distribusi siang-malam global.
+- Menampilkan geografis Bumi yang realistis: benua, pulau, continental shelf, dan topografi terrain.
+- Menjadi contoh implementasi WebGL modular untuk pembelajaran grafika komputer dan procedural generation.
 
-## Fitur Utama
+## ✨ Fitur Utama
 
-- Render Bumi 3D dengan mesh UV sphere prosedural.
-- Shader GLSL ES 300 dengan pencahayaan directional, terminator halus, rim atmosfer, dan city lights malam.
-- Tekstur Bumi dan awan dihasilkan secara prosedural (tanpa aset gambar eksternal).
-- Overlay 2D untuk arah Matahari dan sumbu rotasi.
-- HUD status real-time untuk FPS dan sudut rotasi.
-- Interaksi kamera orbit:
-  - Drag untuk orbit 360 derajat
-  - Scroll untuk zoom
-  - Dukungan sentuh (drag dan pinch-to-zoom)
-- Toggle UI untuk menyalakan atau mematikan arah Matahari, sumbu rotasi, dan awan.
+### Rendering & Visual
 
-## Stack Teknologi
+- **Bumi 3D realistis** dengan mesh UV sphere prosedural dan resolusi tinggi.
+- **Tekstur Bumi prosedural** dengan komposisi geografis akurat:
 
-- HTML5 Canvas
-- WebGL 2.0
-- GLSL ES 3.00
-- JavaScript ES Modules
-- CSS (UI overlay dan panel)
+  - Lautan dengan kedalaman multi-layer (deep → shelf → coastal)
+  - Daratan dengan terrain realistis: hutan tropis, padang rumput, gurun, gunung berbatu, es kutub
+  - 15+ benua dan pulau besar (Amerika, Eropa, Afrika, Asia, Australia, New Zealand, Greenland, British Isles, Iceland, Japan, Philippines, Indonesia, Madagascar, Caribbean, dsb.)
 
-Tidak ada dependency npm wajib untuk menjalankan versi utama.
+- **Shader GLSL dengan pencahayaan canggih:**
 
-## Struktur Proyek
+  - Directional lighting dari Matahari
+  - Terminator siang-malam yang halus dan realistis
+  - Fresnel rim lighting untuk atmosfer
+  - **City lights malam** di daerah urban dengan warna kuning emas cerah (intensitas 1.15x)
+  - Aurora borealis di kutub
+  - Ambient lighting untuk detail sisi malam
+
+- **Atmosfer dinamis** dengan rim lighting dan tinting siang/malam
+- **Awan prosedural** dengan pola band dan swirl yang natural
+- **Wireframe mode** untuk inspeksi geometri (transparent dengan garis putih)
+
+### Interaksi & Kontrol
+
+- **Kamera orbit interaktif:**
+  - Mouse drag: orbit mengelilingi Bumi 360°
+  - Mouse wheel: zoom smooth in/out
+  - Touch drag: orbit mobile
+  - Pinch (2 jari): zoom mobile
+- **UI Toggle Controls:**
+  - **Atmosfer**: Nyalakan/matikan atmosfer shell
+  - **Awan**: Nyalakan/matikan cloud layer
+  - **Bintang**: Nyalakan/matikan star field (3000 bintang)
+  - **Wireframe**: Mode debug dengan garis mesh transparan
+- **Speed Control:**
+
+  - Tombol Lambat/Cepat: Ubah kecepatan rotasi (×0.05 sampai ×32)
+  - Tombol Reset: Kembali ke kecepatan default (0.3x)
+
+- **HUD Real-time:**
+  - FPS display
+  - Sudut rotasi Bumi (0°–360°)
+  - Kemiringan aksial (23.5°)
+  - Multiplier kecepatan rotasi
+
+### Teknologi & Arsitektur
+
+- **WebGL 1.0** dengan depth testing dan blending yang optimal
+- **Procedural generation** untuk tekstur dan noise
+- **Canvas texture generation** (1024×512 px) untuk Bumi dan awan
+- **No external dependencies** — semuanya native JavaScript
+- **Modular architecture** dengan pemisahan shader, mesh, camera, dan integrator
+
+## 📋 Stack Teknologi
+
+- **Rendering**: WebGL 1.0 (compatible & optimized)
+- **Shading**: GLSL ES (built-in shader language)
+- **Procedural**: Perlin-like noise (fbm2, noise2) + blob-based continent generation
+- **Frontend**: HTML5 Canvas, CSS3, vanilla JavaScript ES6
+- **No build tools**: Run directly in browser, no npm required
+
+## 📁 Struktur Proyek
 
 ```text
 earth-webgl/
-├─ index.html
-├─ integrator.js
-├─ mesh.js
-├─ shaders.js
-├─ camera.js
-├─ style.css
-└─ src/
-   ├─ main.js
-   ├─ geometry.js
-   ├─ shader.js
-   ├─ camera.js
-   ├─ texture.js
-   └─ utils.js
+├─ index.html              ← Entry point utama
+├─ css/
+│  └─ style.css           ← HUD styling dan overlay
+├─ js/
+│  ├─ integrator.js       ← Render loop, state management, texture generation
+│  ├─ shaders.js          ← GLSL shader compilation & linking
+│  ├─ mesh.js             ← Sphere & star mesh geometry builder
+│  └─ camera.js           ← Camera control dan matrix calculations
+├─ README.md              ← This file
 ```
 
-### Catatan Struktur
+## 🔧 Modul Arsitektur
 
-- Entry utama aplikasi aktif ada di root: `index.html` memanggil `initApp()` dari `integrator.js`.
-- Folder `src/` berisi varian atau eksperimen implementasi lain (arsitektur berbeda), bukan entry point default saat `index.html` dijalankan.
+### integrator.js — Core Render Engine
 
-## Arsitektur Modul (Versi Utama)
+**Tanggung jawab utama:**
 
-### 1) mesh.js
+- Inisialisasi WebGL context dan state (depth test, blending)
+- Compile & link shader programs (earth, atmosphere, cloud, wireframe, star, aurora)
+- Generate canvas-based textures:
+  - `generateEarthTextureCanvas()`: Procedural Bumi dengan 1024×512 pixels
+  - `generateCloudTextureCanvas()`: Awan prosedural dengan pattern natural
+- Upload mesh & texture ke GPU
+- Manage render state dan uniforms
+- Update rotation angle sesuai time delta dan speed multiplier
+- UI binding: toggle buttons, speed control, HUD update
+- Main loop via `requestAnimationFrame`
 
-Tanggung jawab:
+**Key functions:**
 
-- Membuat geometri UV sphere (`positions`, `normals`, `uvs`, `indices`).
-- Menghasilkan tekstur Bumi prosedural (`generateEarthTexture`).
-- Menghasilkan tekstur awan prosedural (`generateCloudTexture`).
+```javascript
+continentField(u, v); // Blob-based continent placement
+generateEarthTextureCanvas(); // Procedural Earth texture generation
+generateCloudTextureCanvas(); // Procedural cloud texture generation
+drawSphere(); // Render mesh dengan texture binding
+drawAtmosphere(); // Render rim-lit atmosphere shell
+drawClouds(); // Render cloud layer
+drawWire(); // Render wireframe edges
+drawStars(); // Render star field
+```
 
-Output modul ini diteruskan ke integrator untuk upload ke GPU.
+### shaders.js — Graphics Pipeline
 
-### 2) shaders.js
+**Shader programs:**
 
-Tanggung jawab:
+1. **Earth (earthVS + earthFS)**
 
-- Menyediakan source vertex shader dan fragment shader.
-- Vertex shader menangani transformasi model-view-projection dan normal.
-- Fragment shader menangani:
-  - Warna permukaan
-  - Directional lighting
-  - Terminator siang-malam
-  - City lights malam
-  - Atmosfer (fresnel rim)
-  - Layer awan
+   - Vertex: Model-view-projection transform + normal matrix
+   - Fragment: Texture sampling (uEarthMap), lighting, terminator, city lights, specular
 
-### 3) camera.js
+2. **Atmosphere (atmVS + atmFS)**
 
-Tanggung jawab:
+   - Rim lighting dengan fresnel effect
+   - Siang: biru terang, Malam: gelap dengan tinting
 
-- Menyediakan kelas `EarthCamera`.
-- Menghitung matriks model, view, projection, dan normal matrix.
-- Menangani orbit camera (mouse atau touch), inertia, dan zoom.
-- Mendefinisikan arah cahaya Matahari sebagai `LIGHT_DIR`.
+3. **Cloud (cloudVS + cloudFS)**
 
-### 4) integrator.js
+   - Texture sampling (uCloudMap)
+   - Alpha blending dengan depth masking
 
-Tanggung jawab:
+4. **Wireframe (wireVS + wireFS)**
 
-- Inisialisasi WebGL2 context.
-- Compile dan link shader program.
-- Upload mesh ke GPU (VAO, VBO, IBO).
-- Binding texture ke uniform sampler.
-- Menjalankan render loop via `requestAnimationFrame`.
-- Sinkronisasi UI (toggle button, HUD FPS/rotasi, overlay canvas).
+   - Draw sebagai lines instead of triangles
+   - White color dengan transparency 0.18 alpha
 
-## Alur Render Singkat
+5. **Star (starVS + starFS)**
 
-1. Inisialisasi canvas, context WebGL2, dan shader program.
-2. Generate mesh sphere serta tekstur prosedural.
-3. Upload buffer dan texture ke GPU.
-4. Set global render state (depth test dan culling).
-5. Tiap frame:
-   - Update kamera dan matriks.
-   - Clear frame buffer.
-   - Set uniforms.
-   - Draw sphere (`gl.drawElements`).
-   - Gambar overlay 2D (arah Matahari dan sumbu rotasi jika aktif).
+   - Twinkle effect dengan sine wave
+   - Point rendering untuk efisiensi
 
-## Cara Menjalankan
+6. **Aurora (auroraVS + auroraFS)**
+   - Procedural northern lights animation
+   - Polar band + fbm waves
 
-Karena memakai ES Module, jalankan lewat local server (jangan langsung buka file HTML via `file://`).
+### mesh.js — Geometry Builder
 
-### Opsi A: VS Code Live Server
+**Functions:**
 
-1. Install extension Live Server.
-2. Buka folder proyek di VS Code.
-3. Klik kanan `index.html` -> Open with Live Server.
+- `buildSphere(gl, stacks, slices)`: Generate UV sphere dengan normals & UVs
+- `buildStars(gl, count, radius)`: Generate random star positions + colors
 
-### Opsi B: Python HTTP Server
+**Resolution:**
 
-Di root proyek:
+- Default: 64×64 sphere (4096 vertices)
+- Atmosphere: 32×32 scaled 1.055x
+- Cloud: 32×32 scaled 1.015x
+- Stars: 3000 count
+
+### camera.js — Navigation & Matrices
+
+**Key components:**
+
+- Axial tilt: 23.5° (true Bumi inclination)
+- Orbit camera dengan drag/scroll interaction
+- Matrix computations: projection, view, model, normal
+- Sun direction vector: configurable angle
+
+## 🚀 Cara Menjalankan
+
+Proyek menggunakan ES6 modules, sehingga **harus dijalankan via HTTP server** (tidak support `file://` protocol).
+
+### Option 1: VS Code Live Server (Recommended)
 
 ```bash
+1. Install extension "Live Server" di VS Code
+2. Right-click index.html → "Open with Live Server"
+3. Otomatis buka di http://localhost:5500
+```
+
+### Option 2: Python HTTP Server
+
+```bash
+# Di root folder proyek
 python -m http.server 5500
+
+# Buka browser: http://localhost:5500
 ```
 
-Lalu buka:
-
-```text
-http://localhost:5500
-```
-
-### Opsi C: Node (serve)
-
-1. Install serve global:
+### Option 3: Node.js serve
 
 ```bash
 npm i -g serve
-```
-
-2. Jalankan di root proyek:
-
-```bash
 serve -l 5500
+
+# Buka: http://localhost:5500
 ```
 
-3. Buka `http://localhost:5500`.
+## 🎮 Kontrol Interaksi
 
-## Kontrol Interaksi
+| Input                | Aksi                              |
+| -------------------- | --------------------------------- |
+| **Mouse Drag**       | Orbit kamera mengelilingi Bumi    |
+| **Mouse Wheel**      | Zoom in/out smooth                |
+| **Touch Drag**       | Orbit (mobile)                    |
+| **Pinch (2 jari)**   | Zoom (mobile)                     |
+| **Atmosfer button**  | Toggle atmosphere layer           |
+| **Awan button**      | Toggle cloud layer                |
+| **Bintang button**   | Toggle star field                 |
+| **Wireframe button** | Toggle mesh wireframe debug view  |
+| **◀ Lambat button**  | Kurangi kecepatan rotasi (÷1.5)   |
+| **Cepat ▶ button**   | Tambah kecepatan rotasi (×1.5)    |
+| **Reset button**     | Reset ke kecepatan default (0.3x) |
 
-- Mouse drag: orbit kamera mengelilingi Bumi.
-- Mouse wheel: zoom in/out.
-- Touch drag: orbit kamera.
-- Pinch (2 jari): zoom in/out.
-- Tombol UI:
-  - Arah Matahari: tampil atau sembunyi vektor cahaya.
-  - Sumbu Rotasi: tampil atau sembunyi garis sumbu.
-  - Awan: aktif atau nonaktif layer awan.
+## 🎨 Fitur Visual Detail
 
-## Parameter Visual Penting
+### Komposisi Lautan
 
-Beberapa parameter yang umum diubah:
+- **Deep Ocean**: RGB(4, 22, 72) — biru gelap untuk laut dalam
+- **Mid Ocean**: RGB(8, 64, 148) — biru medium untuk kedalaman sedang
+- **Continental Shelf**: RGB(12, 108, 196) — biru terang untuk papan benua
+- **Bright Ocean**: RGB(18, 164, 228) — cyan terang untuk pantai tropis
 
-- Kemiringan sumbu Bumi: `AXIS_TILT_DEG` pada `camera.js`
-- Kecepatan rotasi otomatis: `AUTO_ROTATE` pada `camera.js`
-- Arah cahaya Matahari: `SUN_DIR_RAW` dan `LIGHT_DIR` pada `camera.js`
-- Kepadatan mesh sphere: `generateUVSphere(latBands, lonBands)` pada `integrator.js`
-- Resolusi tekstur prosedural:
-  - `generateEarthTexture(1024)`
-  - `generateCloudTexture(1024)`
+### Komposisi Daratan
 
-## Kompatibilitas
+- **Rainforest**: RGB(18, 110, 36) — hijau gelap untuk hutan tropis
+- **Grassland**: RGB(126, 140, 62) — hijau ceria untuk padang rumput
+- **Desert/Plains**: RGB(172, 158, 76) — kuning untuk gurun & padang tandus
+- **Mountains**: RGB(128, 116, 108) — abu-abu untuk pegunungan
+- **Snow/Ice**: RGB(240, 244, 248) — putih cerah untuk kutub & puncak
 
-Minimum kebutuhan browser:
+### Pencahayaan Khusus
 
-- Browser modern dengan dukungan WebGL 2.0
+- **City Lights**: Warna kuning emas cerah di area terpencar (intensity 1.15)
+- **Aurora**: Hijau-cyan biru dengan wave animation di kutub
+- **Terminator**: Soft twilight tinting pada garis siang-malam
+- **Coastal Glow**: Highlight halus di tepi benua
 
-Umumnya kompatibel di:
+## 📊 Parameter Penting yang Dapat Diubah
 
-- Chrome
-- Edge
-- Firefox
-- Safari versi terbaru
+Di `integrator.js`:
 
-Jika context WebGL2 gagal dibuat, cek:
+```javascript
+// Tekstur resolution
+const width = 1024;
+const height = 512;
 
-- Driver GPU
-- Hardware acceleration browser
-- Dukungan WebGL di perangkat
+// Mesh resolution
+const SPHERE_STACKS = 64;
+const SPHERE_SLICES = 64;
+const STAR_COUNT = 3000;
 
-## Troubleshooting
+// Default kecepatan rotasi
+state.rotSpeed = 0.3; // 1.0 = 1 putaran per 20 detik
 
-### Halaman kosong atau tidak tampil objek
+// Color palettes untuk texture generation
+// — lihat continentField() & generateEarthTextureCanvas()
+```
 
-- Pastikan membuka via local server, bukan file langsung.
-- Cek DevTools Console untuk error shader compile/link.
+Di `shaders.js`:
 
-### Error CORS atau module gagal load
+```javascript
+// City lights intensity
+const cityLights = cl * 1.15; // Multiplier brightness
 
-- Biasanya karena membuka HTML langsung dari filesystem.
-- Solusi: jalankan local server.
+// Atmosphere rim strength
+const rim = pow(1.0 - dot(N, V), 3.2);
 
-### Performa rendah
+// Terminator softness
+const day = smoothstep(-0.1, 0.18, sunN);
+```
 
-- Kurangi resolusi tekstur (misalnya 1024 menjadi 512).
-- Turunkan segment mesh (misalnya 64 menjadi 48 atau 32).
-- Tutup aplikasi berat lain yang memakai GPU.
+Di `camera.js`:
 
-### Interaksi sentuh terlalu sensitif
+```javascript
+const AXIS_TILT_DEG = 23.5; // Bumi axial tilt
+```
 
-- Sesuaikan nilai sensitivitas handler input di `camera.js`.
+## 🌐 Kompatibilitas Browser
 
-## Pengembangan Lanjutan (Ide)
+**Minimum Requirements:**
 
-- Menambahkan simulasi seasonal (orbit semu Matahari terhadap Bumi).
-- Menambah layer awan sebagai mesh sphere terpisah.
-- Menambahkan post-processing sederhana untuk efek glow/city lights.
-- Menampilkan garis lintang-bujur dan koordinat titik kursor.
-- Menambah mode edukasi dengan anotasi naratif per adegan.
+- WebGL 1.0 support
+- ES6 module support (modern browsers)
+- Hardware GPU acceleration
 
-## Ringkasan Teknis
+**Tested On:**
 
-- Rendering utama: WebGL 2.0 + GLSL procedural shading.
-- Geometri: UV sphere indexed drawing.
-- UI: overlay HTML/CSS + canvas 2D anotasi.
-- Dependency eksternal untuk pipeline render utama: tidak ada.
+- Chrome 90+
+- Firefox 88+
+- Safari 14+
+- Edge 90+
 
-## Lisensi
+**Notes:**
 
-Belum ada file lisensi khusus pada repository ini.
-Jika proyek akan dipublikasikan, disarankan menambahkan LICENSE (misalnya MIT).
+- Performa optimal di desktop dengan GPU dedicated
+- Mobile: kecepatan bergantung pada GPU mobile (kurangi mesh resolution jika perlu)
+
+## 🔍 Troubleshooting
+
+### Halaman Blank / Tidak Ada Objek
+
+```
+✗ Kemungkinan: Buka HTML langsung via file://
+✓ Solusi: Gunakan HTTP server (Live Server / python http.server)
+```
+
+### Module / CORS Error
+
+```
+✗ Kemungkinan: ES6 module require HTTPS atau HTTP
+✓ Solusi: Jalankan lewat localhost server
+```
+
+### Shader Compile Error
+
+```
+✗ Kemungkinan: WebGL 1.0 tidak supported
+✓ Solusi: Cek apakah GPU & browser support WebGL
+Jalankan di console: gl.getParameter(gl.VERSION)
+```
+
+### Performa Lambat / FPS Rendah
+
+```
+✓ Opsi 1: Kurangi mesh resolution (64 → 48 atau 32)
+✓ Opsi 2: Kurangi texture size (1024 → 512)
+✓ Opsi 3: Disable stars / clouds / atmosphere
+✓ Opsi 4: Tutup tab berat lain, restart browser
+```
+
+### Touch/Drag Terlalu Sensitif
+
+```
+✓ Sesuaikan di camera.js:
+  - ORBIT_SPEED: Kecepatan orbit
+  - ZOOM_SPEED: Kecepatan zoom
+  - INERTIA_DAMPING: Perlambatan inertia
+```
+
+## 💡 Development Tips
+
+### Debugging
+
+- Buka DevTools → Console untuk error messages
+- Buka DevTools → Performance untuk profiling FPS
+- Toggle wireframe mode untuk inspect geometry
+
+### Modifikasi Terrain
+
+- Edit `continentField()` di integrator.js untuk tambah/ubah benua
+- Sesuaikan `blob()` parameters untuk form kontrol
+- Ubah fbm scales untuk detail coastline
+
+### Warna Custom
+
+- Ubah RGB arrays di `generateEarthTextureCanvas()` untuk palette custom
+- Eksperimen dengan smoothstep thresholds untuk blending antar region
+
+### Shader Tweaking
+
+- Edit fragment shader di shaders.js untuk lighting changes
+- Tweak `terrainHeight()`, `continentMask()`, `forestMask()` untuk terrain variation
+
+## 🚀 Ide Pengembangan Lanjutan
+
+- [ ] Seasonal orbit simulation (23.5° tilt terhadap ecliptic)
+- [ ] Orbital mechanics simulator (Earth around Sun path)
+- [ ] Rain/weather systems dengan dynamic cloud animation
+- [ ] Latitude/longitude gridlines overlay
+- [ ] Coordinate picker dengan click detection
+- [ ] Time-lapse animation dengan timestamp
+- [ ] Export screenshot sebagai PNG
+- [ ] VR mode support (WebXR)
+- [ ] Political boundaries & country labels
+- [ ] Sea floor topography visualization
+
+## 📝 Catatan Teknis
+
+- **Rendering Pipeline**: Canvas 2D context + WebGL 1.0 blend
+- **Texture Generation**: CPU-side canvas rasterization, GPU upload
+- **Update Rate**: 60 FPS target via requestAnimationFrame
+- **Memory**: ~10-15 MB untuk textures + buffers
+- **No External Libraries**: Semua pure JavaScript
+
+## 📄 Lisensi
+
+Proyek ini belum memiliki lisensi resmi. Jika akan dipublikasikan atau didistribusikan, disarankan menambahkan LICENSE file (MIT, Apache 2.0, GPL, dll sesuai preferensi).
