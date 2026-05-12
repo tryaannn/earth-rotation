@@ -3,6 +3,7 @@
 // ============================================================
 
 const Integrator = (() => {
+  // Utility math helpers for noise and smooth transitions.
   function clamp01(value) {
     return Math.max(0, Math.min(1, value));
   }
@@ -57,6 +58,7 @@ const Integrator = (() => {
     return Math.min(delta, 1 - delta);
   }
 
+  // Procedural continent mask in UV space (0..1).
   function continentField(u, v) {
     let score = 0;
 
@@ -111,6 +113,7 @@ const Integrator = (() => {
     return smoothstep(0.8, 1.2, score);
   }
 
+  // Generates the Earth albedo + land mask texture on a 2D canvas.
   function generateEarthTextureCanvas() {
     const width = 1024;
     const height = 512;
@@ -292,6 +295,7 @@ const Integrator = (() => {
     return canvas;
   }
 
+  // Generates a cloud alpha texture on a 2D canvas.
   function generateCloudTextureCanvas() {
     const width = 1024;
     const height = 512;
@@ -336,6 +340,7 @@ const Integrator = (() => {
     return canvas;
   }
 
+  // Uploads a canvas as a WebGL texture with mipmaps.
   function createTextureFromCanvas(gl, canvas) {
     const texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -386,7 +391,7 @@ const Integrator = (() => {
     const atmMesh = Mesh.buildSphere(gl, 32, 32);
     const starData = Mesh.buildStars(gl, 3000, 200);
 
-    // ── Local texture pipeline ────────────────────────────
+    // ── Local texture pipeline (no external assets) ───────
     const earthTexture = createTextureFromCanvas(
       gl,
       generateEarthTextureCanvas()
@@ -400,7 +405,7 @@ const Integrator = (() => {
     const camera = Camera.create(canvas);
     const { mat4, identity, multiply, scale, normalMatrix } = Camera;
 
-    // ── State ─────────────────────────────────────────────
+    // ── State (render toggles + simulation time) ─────────
     let state = {
       rotAngle: 0,
       rotSpeed: 0.3, // multiplier (1 = ~24s/rev)
@@ -421,7 +426,7 @@ const Integrator = (() => {
     sunDir[1] /= sl;
     sunDir[2] /= sl;
 
-    // ── Helper: bind float attrib ─────────────────────────
+    // ── GL helper: bind float attrib ──────────────────────
     function bindAttrib(prog, name, buf, size) {
       const loc = gl.getAttribLocation(prog, name);
       if (loc < 0) return;
@@ -452,7 +457,7 @@ const Integrator = (() => {
       gl.uniformMatrix3fv(loc, false, m);
     }
 
-    // ── Build Earth model matrix ──────────────────────────
+    // ── Build Earth model matrix (tilt then rotate) ───────
     function earthModel() {
       // tilt around Z axis then rotate around Y
       const tiltRad = (state.axialTilt * Math.PI) / 180;
@@ -478,7 +483,7 @@ const Integrator = (() => {
       return multiply(mat4(), tiltM, rotM);
     }
 
-    // ── Draw sphere helper ─────────────────────────────────
+    // ── Draw sphere helper (shared by earth/atm/clouds) ───
     function drawSphere(prog, mesh, model, extraUniforms, textureBindings) {
       gl.useProgram(prog);
       bindAttrib(prog, "aPosition", mesh.position, 3);
@@ -510,7 +515,7 @@ const Integrator = (() => {
       gl.drawElements(gl.TRIANGLES, mesh.count, gl.UNSIGNED_SHORT, 0);
     }
 
-    // ── Draw wireframe ────────────────────────────────────
+    // ── Draw wireframe overlay ────────────────────────────
     function drawWire(mesh, model) {
       const prog = progs.wire;
       gl.useProgram(prog);
@@ -548,7 +553,7 @@ const Integrator = (() => {
       gl.depthMask(true);
     }
 
-    // ── Draw stars ────────────────────────────────────────
+    // ── Draw stars (rotates with camera drag) ─────────────
     function drawStars() {
       const prog = progs.star;
       gl.useProgram(prog);

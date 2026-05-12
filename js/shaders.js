@@ -379,6 +379,7 @@ const Shaders = (() => {
   `;
 
   // ── Compile helper ───────────────────────────────────────
+  // Compiles a GLSL shader and throws on errors.
   function compile(gl, type, src) {
     const s = gl.createShader(type);
     gl.shaderSource(s, src);
@@ -388,6 +389,7 @@ const Shaders = (() => {
     return s;
   }
 
+  // Links a vertex + fragment shader pair into a program.
   function program(gl, vs, fs) {
     const p = gl.createProgram();
     gl.attachShader(p, compile(gl, gl.VERTEX_SHADER, vs));
@@ -398,6 +400,7 @@ const Shaders = (() => {
     return p;
   }
 
+  // Builds all shader programs used by the renderer.
   function buildAll(gl) {
     return {
       earth: program(gl, earthVS, earthFS),
